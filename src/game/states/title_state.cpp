@@ -1,14 +1,14 @@
 #include "title_state.hpp"
+#include "../areas/prologue.hpp"
 #include "../core/globals.hpp"
 #include "../core/ui_style.hpp"
 #include "fumbo.hpp"
-#include "../areas/prologue.hpp"
 #include <raylib.h>
 
 TitleState::TitleState() {}
 
-static void MakeBtn(Fumbo::UI::Button &btn, const char *label,
-                    float x, float y, float w = UI::BTN_W, float h = UI::BTN_H) {
+static void MakeBtn(Fumbo::UI::Button &btn, const char *label, float x, float y,
+                    float w = UI::BTN_W, float h = UI::BTN_H) {
   btn = Fumbo::UI::Button();
   btn.SetButtonColor(UI::BTN_IDLE);
   btn.IdleColor(UI::BTN_IDLE);
@@ -22,14 +22,18 @@ void TitleState::Init() {
   Fumbo::Instance().PauseSharedState(true);
   titleTex = Fumbo::Assets::LoadTexture("assets/images/title.png");
 
-  // Buttons stacked on the LEFT side
-  constexpr float BX = 60.0f;
-  MakeBtn(btnNewGame,  "NEW GAME",  BX, 300);
-  MakeBtn(btnLoadGame, "LOAD GAME", BX, 366);
-  MakeBtn(btnSettings, "SETTINGS",  BX, 432);
-  MakeBtn(btnExit,     "EXIT",      BX, 498);
+  // P4 Style Menu on the right
+  constexpr float MENU_X = 850.0f;
+  constexpr float MENU_W = 350.0f;
+  constexpr float START_Y = 460.0f;
+  constexpr float SPACING = 65.0f;
 
-  buildversion     = buildinfo.GetBuildString();
+  MakeBtn(btnLoadGame, "CONTINUE", MENU_X, START_Y, MENU_W, 50);
+  MakeBtn(btnNewGame, "NEW GAME", MENU_X, START_Y + SPACING, MENU_W, 50);
+  MakeBtn(btnSettings, "CONFIG", MENU_X, START_Y + SPACING * 2, MENU_W, 50);
+  MakeBtn(btnExit, "EXIT", MENU_X, START_Y + SPACING * 3, MENU_W, 50);
+
+  buildversion = buildinfo.GetBuildString();
   settingsMenuOpen = false;
 }
 
@@ -55,18 +59,20 @@ void TitleState::Update() {
 }
 
 void TitleState::DrawClean() {
-  // Original global background image
-  Fumbo::Graphic2D::DrawBackground(globalBackground);
+  // Solid P4 Yellow background (no bgTex cutout)
+  Color p4y = {254, 235, 44, 255};
+  Fumbo::Graphic2D::DrawRectangle(0, 0, 1280, 720, p4y);
 
-  // Title image — right side, same position as original
+  // Title image (Logo) — left side
   Fumbo::Graphic2D::DrawTexture(
-      titleTex, {320, -50},
-      {(float)titleTex.width / 3.0f, (float)titleTex.height / 3.0f},
-      0.0f, WHITE);
+      titleTex, {50, 50},
+      {(float)titleTex.width / 2.5f, (float)titleTex.height / 2.5f}, 0.0f,
+      WHITE);
 
   // Top & bottom accent lines over the background
-  Fumbo::Graphic2D::DrawRectangle(0,   0, 1280, (int)UI::ACCENT_H, UI::AB_YELLOW);
-  Fumbo::Graphic2D::DrawRectangle(0, 717, 1280, (int)UI::ACCENT_H, UI::AB_ORANGE);
+  Fumbo::Graphic2D::DrawRectangle(0, 0, 1280, (int)UI::ACCENT_H, UI::AB_YELLOW);
+  Fumbo::Graphic2D::DrawRectangle(0, 717, 1280, (int)UI::ACCENT_H,
+                                  UI::AB_ORANGE);
 
   if (settingsMenuOpen) {
     Settings::Instance().DrawClean();
@@ -74,7 +80,8 @@ void TitleState::DrawClean() {
   }
 
   // Build version — bottom-left
-  Fumbo::Graphic2D::DrawText(buildversion, {14, 703}, fontDefault, 13, UI::TEXT_DIM);
+  Fumbo::Graphic2D::DrawText(buildversion, {14, 703}, fontDefault, 13,
+                             UI::TEXT_DIM);
 }
 
 void TitleState::DrawDirty() {
@@ -84,6 +91,7 @@ void TitleState::DrawDirty() {
     return;
   }
 
+  // Draw the standard UI buttons
   btnNewGame.Draw();
   btnLoadGame.Draw();
   btnSettings.Draw();

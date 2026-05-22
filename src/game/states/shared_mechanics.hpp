@@ -1,9 +1,9 @@
 #pragma once
+#include "android_controls.hpp"
 #include "fumbo.hpp"
-#include "template/platformer.hpp"
 #include "pause_action.hpp"
 #include "pause_menu.hpp"
-#include "android_controls.hpp"
+#include "template/platformer.hpp"
 
 // Represents the shared mechanics logic (player, HUD)
 class SharedMechanics : public IGameState {
@@ -75,7 +75,8 @@ public:
   // True (once) when SharedMechanics has processed a RETRY action.
   // The stage should call its own Init() and then consume this flag.
   bool ConsumeResetStage() {
-    if (!resetStage) return false;
+    if (!resetStage)
+      return false;
     resetStage = false;
     return true;
   }
@@ -85,8 +86,8 @@ private:
   Fumbo::Platformer::PlatformerController *controller = nullptr;
 
   bool isPaused = false;
-  bool resetStage = false;  // set by RETRY; consumed by stage
-  bool inputsBlocked = false;  // set by RETRY; consumed by stage
+  bool resetStage = false;    // set by RETRY; consumed by stage
+  bool inputsBlocked = false; // set by RETRY; consumed by stage
   PauseMenu pauseMenu;
   AndroidControls androidControls; // stub on desktop, active on Android
 
@@ -94,7 +95,7 @@ private:
   Fumbo::UI::Button btnExit;
 
   float attackTimer = 0.0f;
-  bool showDebug = true;
+  bool showDebug = false;
   bool gameOver = false;
 
   // Player health

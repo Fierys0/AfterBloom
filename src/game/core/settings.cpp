@@ -35,6 +35,16 @@ bool Settings::Update(bool showTitleButton) {
   if (!loaded) loaded = Load();
   shouldShowTitleButton = showTitleButton;
 
+  // Keep debug toggle label in sync with F3 hotkey
+  {
+    auto ss = std::dynamic_pointer_cast<SharedMechanics>(
+        Fumbo::Engine::Instance().GetSharedState());
+    if (ss && ss->IsDebugEnabled() != debugEnabled) {
+      debugEnabled = ss->IsDebugEnabled();
+      debugToggle.AddText(debugEnabled ? "ON" : "OFF", fontDefault, 22, UI::BTN_TEXT);
+    }
+  }
+
   FadeManager &fader = Fumbo::Instance().GetFader();
   if (!closing && !fader.IsGroupActive(2))
     fader.AddFade(backgroundTexture, {0, 0}, {1280, 720}, 0.5f, true, 2);
@@ -73,6 +83,19 @@ bool Settings::Update(bool showTitleButton) {
     if (ss)
       ss->SetRenderMode(godraysEnabled ? SharedMechanics::RenderMode::GODRAYS
                                        : SharedMechanics::RenderMode::NORMAL);
+  }
+
+  // SHADERS — debug overlay
+  debugToggle.SetBounds(CX, PY + 448, 110, 38);
+  if (debugToggle.IsPressed()) {
+    debugEnabled = !debugEnabled;
+    debugToggle.AddText(debugEnabled ? "ON" : "OFF", fontDefault, 22, UI::BTN_TEXT);
+    auto ss = std::dynamic_pointer_cast<SharedMechanics>(
+        Fumbo::Engine::Instance().GetSharedState());
+    if (ss) {
+      ss->SetDebugEnabled(debugEnabled);
+      Fumbo::Graphic2D::Physics::Instance().SetDebugDraw(debugEnabled);
+    }
   }
 
   if (showTitleButton) {
@@ -122,8 +145,10 @@ void Settings::DrawDirty() {
 
   // ── SHADERS ──────────────────────────────────────────
   DrawSection("SHADERS", PY + 348);
-  Fumbo::Graphic2D::DrawText("God Rays", {LX, PY + 376}, fontDefault, 22, UI::TEXT);
+  Fumbo::Graphic2D::DrawText("God Rays",      {LX, PY + 376}, fontDefault, 22, UI::TEXT);
   godraysToggle.Draw();
+  Fumbo::Graphic2D::DrawText("Debug Overlay", {LX, PY + 446}, fontDefault, 22, UI::TEXT);
+  debugToggle.Draw();
 
   if (shouldShowTitleButton) {
     titleButton.Draw();
@@ -143,8 +168,14 @@ bool Settings::Load() {
   MakeBtn(exitButton,        "X");
   MakeBtn(titleButton,       "TO TITLE");
   MakeBtn(quitButton,        "EXIT GAME");
-  MakeBtn(vsyncToggleButton, vsync         ? "ON" : "OFF");
+  MakeBtn(vsyncToggleButton, vsync          ? "ON" : "OFF");
   MakeBtn(godraysToggle,     godraysEnabled ? "ON" : "OFF");
+
+  // Sync debug state from SharedMechanics on first load
+  auto ss = std::dynamic_pointer_cast<SharedMechanics>(
+      Fumbo::Engine::Instance().GetSharedState());
+  if (ss) debugEnabled = ss->IsDebugEnabled();
+  MakeBtn(debugToggle, debugEnabled ? "ON" : "OFF");
 
   // MinSlider — no SliderConfig needed, colours baked into MinSlider::Draw()
   volumeSlider = MinSlider(0.f, 1.f, masterVolume);

@@ -90,12 +90,14 @@ private:
 
   Fumbo::UI::Button vsyncToggleButton;
   Fumbo::UI::Button godraysToggle;
+  Fumbo::UI::Button debugToggle;
 
   // State
   float masterVolume = 1.0f;
   bool  vsync        = false;
   int   fpsLimit     = 60;
   bool  godraysEnabled = false;
+  bool  debugEnabled   = false;
 
   bool closing              = false;
   bool loaded               = false;
