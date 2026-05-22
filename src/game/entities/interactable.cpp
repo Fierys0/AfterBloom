@@ -1,4 +1,5 @@
 #include "interactable.hpp"
+#include "fumbo.hpp"
 #include "raylib.h"
 
 // ---------------------------------------------------------------
@@ -6,9 +7,9 @@
 // ---------------------------------------------------------------
 
 void InteractableSystem::Add(Vector2 pos, float radius,
-                              const std::string &label,
-                              Fumbo::Graphic2D::Object *obj,
-                              std::function<void()> callback) {
+                             const std::string &label,
+                             Fumbo::Graphic2D::Object *obj,
+                             std::function<void()> callback) {
   entries.push_back({pos, radius, label, obj, std::move(callback)});
 }
 
@@ -18,12 +19,12 @@ void InteractableSystem::Add(Vector2 pos, float radius,
 
 void InteractableSystem::Update(Vector2 playerPos, bool interactPressed) {
   lastPlayerPos = playerPos;
-  playerNear    = false;
+  playerNear = false;
 
   for (auto &e : entries) {
-    float dx   = playerPos.x - e.pos.x;
-    float dy   = playerPos.y - e.pos.y;
-    bool  near = (sqrtf(dx * dx + dy * dy) <= e.radius);
+    float dx = playerPos.x - e.pos.x;
+    float dy = playerPos.y - e.pos.y;
+    bool near = (sqrtf(dx * dx + dy * dy) <= e.radius);
 
     if (near) {
       playerNear = true;
@@ -42,14 +43,14 @@ void InteractableSystem::Update(Vector2 playerPos, bool interactPressed) {
 
 void InteractableSystem::DrawWorld() const {
   for (const auto &e : entries) {
-    float dx   = lastPlayerPos.x - e.pos.x;
-    float dy   = lastPlayerPos.y - e.pos.y;
-    bool  near = (sqrtf(dx * dx + dy * dy) <= e.radius);
+    float dx = lastPlayerPos.x - e.pos.x;
+    float dy = lastPlayerPos.y - e.pos.y;
+    bool near = (sqrtf(dx * dx + dy * dy) <= e.radius);
 
     if (near) {
-      // World-space label - raw DrawText because we're inside a camera transform
-      DrawText(TextFormat("[E] %s", e.label.c_str()),
-               (int)e.pos.x - 20, (int)e.pos.y - 70, 18, WHITE);
+      std::string text = "[E] " + e.label;
+      Fumbo::Graphic2D::DrawText(text, {e.pos.x - 20, e.pos.y - 70}, {}, 18,
+                                 WHITE);
     }
   }
 }

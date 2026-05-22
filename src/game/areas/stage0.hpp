@@ -1,10 +1,12 @@
 #pragma once
-#include "fumbo.hpp"
-#include "template/platformer.hpp"
-#include "../states/shared_mechanics.hpp"
-#include "../entities/slime_enemy.hpp"
 #include "../entities/interactable.hpp"
+#include "../entities/slime_enemy.hpp"
+#include "../states/shared_mechanics.hpp"
+#include "fumbo.hpp"
+#include "fumbo/physics.hpp"
 #include "raylib.h"
+#include "template/platformer.hpp"
+#include <cstddef>
 #include <memory>
 #include <vector>
 
@@ -23,9 +25,11 @@ private:
   Camera2D camera;
 
   // Physics objects
-  Fumbo::Graphic2D::Object *ground    = nullptr;
+  Fumbo::Graphic2D::Object *ground = nullptr;
   Fumbo::Graphic2D::Object *platform1 = nullptr;
   Fumbo::Graphic2D::Object *platform2 = nullptr;
+  Fumbo::Graphic2D::Object *platform3 = nullptr;
+  Fumbo::Graphic2D::Object *invisWall = nullptr;
 
   std::vector<Fumbo::Graphic2D::Object *> crates;
 
@@ -37,4 +41,15 @@ private:
 
   // Attack hit gate: one damage event per swing, per slime
   bool attackHitRegistered = false;
+
+  // --- Terrain and object sprites ---
+  Texture2D tileTex{};  // tile27.png  – tiled X across ground / platforms
+  Texture2D crateTex{}; // box.png     – drawn over each crate
+
+  // --- Non-solid decorations ---
+  struct Decoration {
+    Rectangle worldRect; // position + size in world space
+    Texture2D tex;
+  };
+  std::vector<Decoration> decorations;
 };

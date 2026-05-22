@@ -227,14 +227,15 @@ void SharedMechanics::Update() {
     float speedY = player->GetVelocity().y;
     bool grounded = controller ? controller->IsGrounded() : true;
 
-    // Sticky air state: stay in JUMP state until grounded AND velocity is near
-    // zero
+    // Sticky air state: stay in JUMP state until grounded AND vertical speed
+    // has settled. The threshold is generous (30) so standing on a dynamic
+    // crate (which causes small Y velocity fluctuations) doesn't re-trigger it.
     bool inAir = (currentAnim == AnimState::JUMP);
     if (inAir) {
-      if (grounded && fabsf(speedY) < 1.0f)
+      if (grounded && fabsf(speedY) < 30.0f)
         inAir = false;
     } else {
-      if (!grounded || fabsf(speedY) > 5.0f)
+      if (!grounded || fabsf(speedY) > 30.0f)
         inAir = true;
     }
 

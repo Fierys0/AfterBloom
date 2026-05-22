@@ -65,4 +65,14 @@ private:
 
   // Contact damage cooldown (mirrors player i-frames so it fires once per jump)
   float contactCooldown = 0.0f;
+
+  // --- Sprite animation ---
+  Texture2D sprIdle = {};
+  Texture2D sprWalk = {};
+  Texture2D sprRun  = {};
+  Texture2D sprJump = {};
+
+  int   animFrame     = 0;
+  float animTimer     = 0.0f;
+  bool  facingRight   = true;  // flips sprite horizontally
 };

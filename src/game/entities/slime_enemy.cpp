@@ -11,7 +11,7 @@ void SlimeEnemy::Spawn(Vector2 position) {
   physicsObj = new Fumbo::Graphic2D::Object();
   physicsObj->SetPosition(position);
   physicsObj->SetRectangle(36, 28);
-  physicsObj->SetColor({80, 200, 80, 255});
+  physicsObj->SetColor({0, 0, 0, 0}); // transparent — sprite drawn separately
   physicsObj->SetMass(2.0f);
   physicsObj->SetGravityScale(1.0f);
   physicsObj->SetRestitution(0.1f);
@@ -24,6 +24,16 @@ void SlimeEnemy::Spawn(Vector2 position) {
   patrolFlipTimer = 2.0f;
   contactCooldown = 0.0f;
   justKilled = false;
+
+  // Load sprite sheets
+  sprIdle = Fumbo::Assets::LoadTexture("assets/sprite/Enemy/Slime/Idle.png");
+  sprWalk = Fumbo::Assets::LoadTexture("assets/sprite/Enemy/Slime/Walk.png");
+  sprRun = Fumbo::Assets::LoadTexture("assets/sprite/Enemy/Slime/Run.png");
+  sprJump = Fumbo::Assets::LoadTexture("assets/sprite/Enemy/Slime/Jump.png");
+
+  animFrame = 0;
+  animTimer = 0.0f;
+  facingRight = true;
 }
 
 void SlimeEnemy::Destroy() {
@@ -31,6 +41,24 @@ void SlimeEnemy::Destroy() {
     Fumbo::Graphic2D::Physics::Instance().RemoveObject(physicsObj);
     delete physicsObj;
     physicsObj = nullptr;
+  }
+
+  // Unload sprite sheets if loaded
+  if (sprIdle.id != 0) {
+    UnloadTexture(sprIdle);
+    sprIdle = {};
+  }
+  if (sprWalk.id != 0) {
+    UnloadTexture(sprWalk);
+    sprWalk = {};
+  }
+  if (sprRun.id != 0) {
+    UnloadTexture(sprRun);
+    sprRun = {};
+  }
+  if (sprJump.id != 0) {
+    UnloadTexture(sprJump);
+    sprJump = {};
   }
 }
 
@@ -111,6 +139,69 @@ void SlimeEnemy::Update(float deltaTime, Vector2 playerPos,
     contactCooldown = 0.5f;
   }
 
+  // Re-fetch velocity for animation (state machine may have changed it)
+  vel = physicsObj->GetVelocity();
+  float speed = fabsf(vel.x);
+
+  // Update facing direction based on horizontal velocity
+  if (vel.x > 5.0f)
+    facingRight = true;
+  else if (vel.x < -5.0f)
+    facingRight = false;
+
+  // Pick animation sheet based on state
+  Texture2D *sheet = &sprIdle;
+  int totalFrames = 4;
+  float fps = 8.0f;
+
+  switch (state) {
+  case State::JUMP_ATTACK:
+    sheet = &sprJump;
+    totalFrames = (sprJump.id != 0 && sprJump.height > 0)
+                      ? sprJump.width / sprJump.height
+                      : 4;
+    fps = 10.0f;
+    break;
+  case State::CHASE:
+    sheet = &sprRun;
+    totalFrames = (sprRun.id != 0 && sprRun.height > 0)
+                      ? sprRun.width / sprRun.height
+                      : 4;
+    fps = 12.0f;
+    break;
+  case State::PATROL:
+    if (speed > 10.0f) {
+      sheet = &sprWalk;
+      totalFrames = (sprWalk.id != 0 && sprWalk.height > 0)
+                        ? sprWalk.width / sprWalk.height
+                        : 4;
+      fps = 8.0f;
+    } else {
+      sheet = &sprIdle;
+      totalFrames = (sprIdle.id != 0 && sprIdle.height > 0)
+                        ? sprIdle.width / sprIdle.height
+                        : 4;
+      fps = 6.0f;
+    }
+    break;
+  default:
+    sheet = &sprIdle;
+    totalFrames = (sprIdle.id != 0 && sprIdle.height > 0)
+                      ? sprIdle.width / sprIdle.height
+                      : 4;
+    fps = 6.0f;
+    break;
+  }
+
+  // Advance animation frame
+  if (totalFrames > 0) {
+    animTimer += deltaTime;
+    if (animTimer >= 1.0f / fps) {
+      animTimer -= 1.0f / fps;
+      animFrame = (animFrame + 1) % totalFrames;
+    }
+  }
+
   // ---- Death check ----
   if (health <= 0 && physicsObj) {
     justKilled = true;
@@ -147,13 +238,65 @@ void SlimeEnemy::DrawWorld(bool showDebug) const {
   Vector2 pos = physicsObj->GetPosition();
   int hp = health;
 
+  // --- Draw animated sprite ---
+  // Frame is square (128×128). totalFrames = sheet_width / sheet_height.
+  const Texture2D *sheet = nullptr;
+  int totalFrames = 4;
+
+  switch (state) {
+  case State::JUMP_ATTACK:
+    if (sprJump.id != 0) {
+      sheet = &sprJump;
+      totalFrames = sprJump.width / sprJump.height;
+    }
+    break;
+  case State::CHASE:
+    if (sprRun.id != 0) {
+      sheet = &sprRun;
+      totalFrames = sprRun.width / sprRun.height;
+    }
+    break;
+  case State::PATROL:
+    if (fabsf(physicsObj->GetVelocity().x) > 10.0f && sprWalk.id != 0) {
+      sheet = &sprWalk;
+      totalFrames = sprWalk.width / sprWalk.height;
+    } else if (sprIdle.id != 0) {
+      sheet = &sprIdle;
+      totalFrames = sprIdle.width / sprIdle.height;
+    }
+    break;
+  default:
+    if (sprIdle.id != 0) {
+      sheet = &sprIdle;
+      totalFrames = sprIdle.width / sprIdle.height;
+    }
+    break;
+  }
+
+  if (sheet && sheet->id != 0 && totalFrames > 0) {
+    int frame = animFrame % totalFrames;
+    // Frame is square: width == height of the sheet
+    int frameW = sheet->height;
+    int frameH = sheet->height;
+
+    float srcX = (float)(frame * frameW);
+    // Flip by negating source width
+    float srcW = facingRight ? (float)frameW : -(float)frameW;
+    if (!facingRight)
+      srcX += (float)frameW; // shift start for flipped frame
+
+    Rectangle source = {srcX, 0, srcW, (float)frameH};
+    const float scale = 1;
+    Fumbo::Utils::DrawWorldSprite(physicsObj, *sheet, source, {0, -48}, scale);
+  }
+
   // HP bar background (red) then green fill
   int barW = 40, barH = 5;
   int barX = (int)(pos.x - barW / 2);
-  int barY = (int)(pos.y - 30);
+  int barY = (int)(pos.y - 42);
   Fumbo::Graphic2D::DrawRectangle(barX, barY, barW, barH, RED);
-  Fumbo::Graphic2D::DrawRectangle(barX, barY, (int)(((float)hp / (float)maxHealth) * barW), barH,
-                GREEN);
+  Fumbo::Graphic2D::DrawRectangle(
+      barX, barY, (int)(((float)hp / (float)maxHealth) * barW), barH, GREEN);
 
   // Debug state label
   if (showDebug) {
@@ -171,6 +314,6 @@ void SlimeEnemy::DrawWorld(bool showDebug) const {
     default:
       break;
     }
-    Fumbo::Graphic2D::DrawText(label, {pos.x - 15, pos.y - 48}, {}, 12, YELLOW);
+    Fumbo::Graphic2D::DrawText(label, {pos.x - 15, pos.y - 58}, {}, 12, YELLOW);
   }
 }
