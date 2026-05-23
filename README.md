@@ -6,6 +6,12 @@ After Bloom is a **2D game prototype built with C++ and raylib**
 ![repo-size](https://img.shields.io/github/repo-size/Fierys0/AfterBloom)
 ![license](https://img.shields.io/github/license/Fierys0/AfterBloom)
 
+## Cloning Project
+
+``` Terminal
+git clone https://github.com/Fierys0/AfterBloom.git --recursive
+```
+
 ---
 
 ## Disclaimer
