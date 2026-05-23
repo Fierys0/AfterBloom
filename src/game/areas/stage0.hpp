@@ -30,6 +30,9 @@ private:
   Fumbo::Graphic2D::Object *platform2 = nullptr;
   Fumbo::Graphic2D::Object *platform3 = nullptr;
   Fumbo::Graphic2D::Object *invisWall = nullptr;
+  Fumbo::Graphic2D::Object *groundHelper = nullptr;
+  Fumbo::Graphic2D::Object *platform3Helper = nullptr;
+  Fumbo::Graphic2D::Object *platform1Helper = nullptr;
 
   std::vector<Fumbo::Graphic2D::Object *> crates;
 
@@ -43,8 +46,9 @@ private:
   bool attackHitRegistered = false;
 
   // --- Terrain and object sprites ---
-  Texture2D tileTex{};  // tile27.png  – tiled X across ground / platforms
-  Texture2D crateTex{}; // box.png     – drawn over each crate
+  Texture2D tileTex{};
+  Texture2D crateTex{};
+  Texture2D undergroundTex{};
 
   // --- Non-solid decorations ---
   struct Decoration {

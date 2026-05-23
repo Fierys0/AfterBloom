@@ -5,6 +5,7 @@
 #include "event1.hpp"
 #include "fumbo.hpp"
 #include "fumbo/physics.hpp"
+#include "raylib.h"
 #include "stage1.hpp"
 #include "template/platformer.hpp"
 
@@ -28,12 +29,16 @@ void Stage0State::Init() {
   physics.SetFixedTimeStep(60.0f);
 
   // Platforms
-  ground = Fumbo::Platformer::CreatePlatform({0, 890}, {11000, 500}, DARKGRAY);
-  platform1 = Fumbo::Platformer::CreatePlatform({2100, 500}, {1000, 70}, GREEN);
+  ground = Fumbo::Platformer::CreatePlatform({0, 690}, {7000, 96}, DARKGRAY);
+  platform1 = Fumbo::Platformer::CreatePlatform({1800, 500}, {400, 70}, GREEN);
   platform2 = Fumbo::Platformer::CreatePlatform({2300, 400}, {600, 130}, GREEN);
-  platform3 =
-      Fumbo::Platformer::CreatePlatform({5000, 600}, {3000, 550}, GREEN);
+  platform3 = Fumbo::Platformer::CreatePlatform({5000, 400}, {3000, 96}, GREEN);
   invisWall = Fumbo::Platformer::CreatePlatform({-800, 0}, {100, 10000}, BLANK);
+  groundHelper =
+      Fumbo::Platformer::CreatePlatform({0, 1735}, {11000, 2000}, DARKGRAY);
+  platform3Helper =
+      Fumbo::Platformer::CreatePlatform({5000, 745}, {3000, 600}, GREEN);
+  platform1Helper = Fumbo::Platformer::CreatePlatform({2300, 500}, {600, 70});
 
   // Player via shared mechanics
   auto sharedState = std::dynamic_pointer_cast<SharedMechanics>(
@@ -99,6 +104,8 @@ void Stage0State::Init() {
   // --- Load terrain and object sprites ---
   tileTex = Fumbo::Assets::LoadTexture("assets/sprite/Terrain/tile27.png");
   crateTex = Fumbo::Assets::LoadTexture("assets/sprite/Terrain/box.png");
+  undergroundTex =
+      Fumbo::Assets::LoadTexture("assets/sprite/Terrain/tile52.png");
 
   const float groundTop = 650; // world y of ground surface
   decorations.clear();
@@ -197,8 +204,10 @@ void Stage0State::Cleanup() {
   UnloadTexture(bgTex);
 
   // Terrain + crate textures
-  if (tileTex.id != 0)
+  if (tileTex.id != 0) {
     UnloadTexture(tileTex);
+    UnloadTexture(undergroundTex);
+  }
   if (crateTex.id != 0)
     UnloadTexture(crateTex);
 
@@ -299,10 +308,17 @@ void Stage0State::DrawScene() {
 
   if (tileTex.id != 0) {
     const float tileRepeat = 96;
-    const float tileRepeatBig = 480;
-    Fumbo::Utils::DrawWorldSpriteTiled(platform3, tileTex, tileRepeatBig,
+    Fumbo::Utils::DrawWorldSpriteTiled(platform3Helper, undergroundTex,
+                                       tileRepeat,
+                                       Fumbo::Utils::TileMode::TILE_XY);
+    Fumbo::Utils::DrawWorldSpriteTiled(groundHelper, undergroundTex, tileRepeat,
+                                       Fumbo::Utils::TileMode::TILE_XY);
+    Fumbo::Utils::DrawWorldSpriteTiled(platform1Helper, undergroundTex,
+                                       tileRepeat,
                                        Fumbo::Utils::TileMode::TILE_X);
-    Fumbo::Utils::DrawWorldSpriteTiled(ground, tileTex, tileRepeatBig,
+    Fumbo::Utils::DrawWorldSpriteTiled(platform3, tileTex, tileRepeat,
+                                       Fumbo::Utils::TileMode::TILE_X);
+    Fumbo::Utils::DrawWorldSpriteTiled(ground, tileTex, tileRepeat,
                                        Fumbo::Utils::TileMode::TILE_X);
     Fumbo::Utils::DrawWorldSpriteTiled(platform1, tileTex, tileRepeat,
                                        Fumbo::Utils::TileMode::TILE_X);
